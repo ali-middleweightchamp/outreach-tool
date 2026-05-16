@@ -25,3 +25,33 @@ def test_extract_email_returns_empty_if_none():
 def test_extract_email_ignores_image_paths():
     html = 'img src="photo.png" alt="photo@2x.jpg" contact: info@acme.com'
     assert extract_email(html) == 'info@acme.com'
+
+
+from scraper import find_lpr
+
+
+def test_find_lpr_extracts_english_ceo():
+    html = '<div><h3>Ivan Ivanov</h3><p>CEO</p></div>'
+    name, title = find_lpr(html)
+    assert name == 'Ivan Ivanov'
+    assert 'CEO' in title
+
+
+def test_find_lpr_extracts_russian_director():
+    html = '<div><p>Директор</p><h3>Иван Иванов</h3></div>'
+    name, title = find_lpr(html)
+    assert name == 'Иван Иванов'
+    assert 'Директор' in title
+
+
+def test_find_lpr_returns_empty_if_none():
+    html = '<p>О нашей компании. Мы делаем продукты.</p>'
+    name, title = find_lpr(html)
+    assert name == ''
+    assert title == ''
+
+
+def test_find_lpr_ignores_short_words():
+    html = '<p>CEO</p><p>Он основал компанию.</p>'
+    name, title = find_lpr(html)
+    assert name == ''

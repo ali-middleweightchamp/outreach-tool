@@ -26,3 +26,27 @@ def extract_email(html: str) -> str:
             if email.lower().startswith(prefix):
                 return email
     return emails[0] if emails else ""
+
+
+LPR_TITLES = [
+    "ceo", "cto", "cfo", "founder", "co-founder", "director", "president",
+    "head", "chief", "owner", "managing",
+    "директор", "основатель", "президент", "управляющий", "генеральный",
+]
+
+
+def find_lpr(html: str) -> tuple:
+    """Ищет имя и должность ЛПР в HTML. Возвращает (имя, должность)."""
+    soup = BeautifulSoup(html, "html.parser")
+    lines = [l.strip() for l in soup.get_text(separator="\n").splitlines() if l.strip()]
+
+    for i, line in enumerate(lines):
+        if any(title in line.lower() for title in LPR_TITLES):
+            for offset in [-1, -2, 1, 2]:
+                idx = i + offset
+                if 0 <= idx < len(lines):
+                    candidate = lines[idx]
+                    # Имя: два слова с заглавной буквой, длина до 50 символов
+                    if re.match(r'^[А-ЯЁA-Z][а-яёa-z\-]+ [А-ЯЁA-Z][а-яёa-z\-]+', candidate) and len(candidate) < 50:
+                        return candidate, line
+    return "", ""
