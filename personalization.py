@@ -71,8 +71,8 @@ def main():
 
     with open(CONTACTS_FILE, encoding="utf-8", newline="") as f:
         reader = csv.DictReader(f)
-        rows = list(reader)
         fieldnames = list(reader.fieldnames or [])
+        rows = list(reader)
 
     if "Персонализация" not in fieldnames:
         fieldnames = fieldnames + ["Персонализация"]
