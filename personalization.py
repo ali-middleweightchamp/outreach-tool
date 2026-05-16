@@ -53,3 +53,50 @@ def generate_personalization(page_text: str, client: anthropic.Anthropic) -> str
     except Exception as e:
         print(f"  Ошибка API: {e}")
         return ""
+
+
+def main():
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        print("Ошибка: переменная окружения ANTHROPIC_API_KEY не установлена.")
+        print("Установите: set ANTHROPIC_API_KEY=ваш_ключ_здесь")
+        return
+
+    if not Path(CONTACTS_FILE).exists():
+        print(f"Файл {CONTACTS_FILE} не найден. Сначала запустите scraper.py.")
+        return
+
+    client = anthropic.Anthropic(api_key=api_key)
+    session = requests.Session()
+
+    with open(CONTACTS_FILE, encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f)
+        rows = list(reader)
+        fieldnames = list(reader.fieldnames or [])
+
+    if "Персонализация" not in fieldnames:
+        fieldnames = fieldnames + ["Персонализация"]
+
+    for row in tqdm(rows, desc="Генерация персонализации"):
+        if row.get("Персонализация"):
+            continue
+
+        url = row.get("Сайт", "")
+        if not url:
+            row["Персонализация"] = ""
+            continue
+
+        page_text = fetch_page_text(url, session)
+        row["Персонализация"] = generate_personalization(page_text, client)
+        time.sleep(random.uniform(2, 3))
+
+    with open(CONTACTS_FILE, "w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+    print(f"\nГотово! Персонализация добавлена в {CONTACTS_FILE}")
+
+
+if __name__ == "__main__":
+    main()
