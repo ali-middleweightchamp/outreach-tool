@@ -1,5 +1,5 @@
 requests==2.32.3
 beautifulsoup4==4.12.3
 tqdm==4.67.1
-anthropic==0.52.0
+openai
 pytest==8.3.5

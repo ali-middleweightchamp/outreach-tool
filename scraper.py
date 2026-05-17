@@ -20,7 +20,7 @@ HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/
 def extract_email(html: str) -> str:
     """Извлекает email из HTML. Приоритет: info@ > sales@ > hello@ > contact@ > любой."""
     emails = EMAIL_REGEX.findall(html)
-    emails = [e for e in emails if not any(skip in e for skip in [".png", ".jpg", ".gif", "example.com"])]
+    emails = [e for e in emails if not any(skip in e for skip in [".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", "example.com"])]
     for prefix in PRIORITY_PREFIXES:  # Перебираем приоритеты по порядку
         for email in emails:
             if email.lower().startswith(prefix):
@@ -46,8 +46,11 @@ def find_lpr(html: str) -> tuple:
                 idx = i + offset
                 if 0 <= idx < len(lines):
                     candidate = lines[idx]
-                    # Имя: два слова с заглавной буквой, длина до 50 символов
-                    if re.match(r'^[А-ЯЁA-Z][а-яёa-z\-]+ [А-ЯЁA-Z][а-яёa-z\-]+', candidate) and len(candidate) < 50:
+                    words = candidate.split()
+                    if (re.match(r'^[А-ЯЁA-Z][а-яёa-z\-]+ [А-ЯЁA-Z][а-яёa-z\-]+', candidate)
+                            and len(candidate) < 50
+                            and len(words) <= 4
+                            and not re.search(r'\d', candidate)):
                         return candidate, line
     return "", ""
 

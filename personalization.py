@@ -4,23 +4,23 @@ import random
 import time
 from pathlib import Path
 
-import anthropic
+from openai import OpenAI
 import requests
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 
 CONTACTS_FILE = "contacts.csv"
-MODEL = "claude-sonnet-4-20250514"
+MODEL_NAME = "gpt-4o-mini"
 MAX_TEXT_CHARS = 3000
-MAX_TOKENS = 200
 REQUEST_TIMEOUT = 10
 HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
 
 SYSTEM_PROMPT = (
     "Ты помощник для B2B аутрича. "
-    "На основе текста сайта напиши 1-2 предложения персонализации "
-    "для холодного письма. Только реальные факты с сайта. "
-    "Без общих фраз. На русском языке."
+    "На основе текста сайта напиши 1-2 предложения персонализации для холодного письма. "
+    "Начинай сразу с конкретного факта о компании — без приветствий, без «Я заметил», без «Здравствуйте». "
+    "Пример: «Kokoc Group входит в топ-5 performance-агентств России и работает с 2010 года...» "
+    "Только реальные факты с сайта. Без общих фраз. На русском языке."
 )
 
 
@@ -38,35 +38,37 @@ def fetch_page_text(url: str, session: requests.Session) -> str:
         return ""
 
 
-def generate_personalization(page_text: str, client: anthropic.Anthropic) -> str:
-    """Генерирует персонализацию через Claude API на основе текста сайта."""
+def generate_personalization(page_text: str, client: OpenAI) -> str:
+    """Генерирует персонализацию через OpenAI API на основе текста сайта."""
     if not page_text.strip():
         return ""
     try:
-        message = client.messages.create(
-            model=MODEL,
-            max_tokens=MAX_TOKENS,
-            system=SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": f"Текст сайта:\n{page_text}"}],
+        response = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": f"Текст сайта:\n{page_text}"},
+            ],
+            timeout=30,
         )
-        return message.content[0].text.strip()
+        return response.choices[0].message.content.strip()
     except Exception as e:
         print(f"  Ошибка API: {e}")
         return ""
 
 
 def main():
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
-        print("Ошибка: переменная окружения ANTHROPIC_API_KEY не установлена.")
-        print("Установите: set ANTHROPIC_API_KEY=ваш_ключ_здесь")
+        print("Ошибка: переменная окружения OPENAI_API_KEY не установлена.")
+        print('Установите: $env:OPENAI_API_KEY="ваш_ключ_здесь"')
         return
 
     if not Path(CONTACTS_FILE).exists():
         print(f"Файл {CONTACTS_FILE} не найден. Сначала запустите scraper.py.")
         return
 
-    client = anthropic.Anthropic(api_key=api_key)
+    client = OpenAI(api_key=api_key)
     session = requests.Session()
 
     with open(CONTACTS_FILE, encoding="utf-8", newline="") as f:
