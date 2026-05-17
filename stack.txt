@@ -1,0 +1,4 @@
+IDE: VS Code + Claude Code
+Модели: claude-sonnet-4-20250514 (Claude Code), gpt-4o-mini (персонализация)
+Инструменты: Python, BeautifulSoup, OpenAI API
+Сбор базы: ручной поиск (hh.ru, 2GIS)
